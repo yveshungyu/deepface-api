@@ -2,3 +2,4 @@ flask
 gunicorn # 是一個比 Flask 內建伺服器更穩定的 Web Server
 deepface
 tensorflow # DeepFace 需要的核心引擎
+tf-keras 
