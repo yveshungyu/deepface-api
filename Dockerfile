@@ -27,4 +27,4 @@ ENV FLASK_APP=app.py
 
 # 使用 Gunicorn 啟動應用程式的指令
 # 監聽 Render 指定的 PORT，並設定 4 個 worker
-CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "--workers", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+CMD gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 --access-logfile - --error-logfile - app:app
