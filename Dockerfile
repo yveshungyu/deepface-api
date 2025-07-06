@@ -27,4 +27,4 @@ ENV FLASK_APP=app.py
 
 # 使用 Gunicorn 啟動應用程式的指令
 # 監聽 Render 指定的 PORT，並設定 4 個 worker
-CMD gunicorn --bind 0.0.0.0:${PORT} --workers 4 app:app
+CMD gunicorn --bind 0.0.0.0:${PORT} --workers 4 --limit-request-line 8192 --limit-request-field-size 16384 --timeout 60 app:app
