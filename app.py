@@ -1,14 +1,16 @@
 import os
 from flask import Flask, request, jsonify
 import logging
-import time # Import the time module
+import time
 
-# Setup logging
+# 設定日誌
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-# Create a folder to temporarily store uploads
+# 【關鍵改動】我們完全不 import DeepFace
+# from deepface import DeepFace 
+
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -17,56 +19,41 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>DeepFace API is running! (Debug Mode)</h1>"
+    return "<h1>DeepFace API is running! (Ultra-light Test Mode)</h1>"
 
 @app.route('/analyze', methods=['GET', 'POST'])
 def analyze_face():
-    # --- Detailed Logging ---
     logging.info("=================================")
-    logging.info("Received request for /analyze!")
+    logging.info("接收到 /analyze 請求！")
 
     if 'file' not in request.files:
-        logging.error("File part missing from request.")
+        logging.error("請求中找不到檔案部分。")
         return jsonify({"error": "file part missing"}), 400
 
     file = request.files['file']
-    logging.info(f"Successfully got file: {file.filename}")
+    logging.info(f"成功獲取檔案: {file.filename}")
 
-    if file.filename == '':
-        logging.error("No file selected.")
-        return jsonify({"error": "no file selected"}), 400
+    # 為了確保伺服器真的收到了檔案，我們依然儲存它
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    try:
+        file.save(filepath)
+        logging.info("✅ 檔案成功儲存到伺服器！")
+        
+        # 直接回傳一個假的、成功的結果
+        dominant_emotion = "test_successful" 
+        logging.info(f"✅ (極輕量測試) 回傳 '{dominant_emotion}'。")
+        
+        os.remove(filepath)
+        
+        return jsonify({"dominant_emotion": dominant_emotion})
 
-    if file:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        try:
-            logging.info(f"Attempting to save file to: {filepath}")
-            file.save(filepath)
-            logging.info("✅ File successfully saved to server!")
-
-            # --- CRITICAL CHANGE: Bypass the resource-intensive DeepFace call ---
-            # analysis_result = DeepFace.analyze( ... )
-            
-            # To simulate work, we'll just pause the program for a moment
-            logging.info("Simulating analysis process...")
-            time.sleep(2)
-
-            # Return a fake, successful result directly
-            dominant_emotion = "neutral" # Dummy result
-            logging.info(f"✅ (Simulated) Analysis complete, returning '{dominant_emotion}'.")
-            
+    except Exception as e:
+        logging.error(f"伺服器在處理檔案時發生錯誤: {str(e)}")
+        if 'filepath' in locals() and os.path.exists(filepath):
             os.remove(filepath)
-            logging.info("Temporary file deleted from server.")
+        return jsonify({"error": str(e)}), 500
             
-            return jsonify({"dominant_emotion": dominant_emotion})
+    return jsonify({"error": "未知的伺服器錯誤"}), 500
 
-        except Exception as e:
-            logging.error(f"An error occurred while processing the file on the server: {str(e)}")
-            if os.path.exists(filepath):
-                os.remove(filepath)
-            return jsonify({"error": str(e)}), 500
-            
-    return jsonify({"error": "Unknown server error"}), 500
-
-# This block is not executed by Gunicorn but is good practice to keep
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
