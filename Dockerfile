@@ -1,5 +1,8 @@
-# 使用一個包含 Python 的基礎映像
+# 使用一個穩定的 Python 版本
 FROM python:3.9-slim
+
+# 設定環境變數，防止 Python 將日誌緩存
+ENV PYTHONUNBUFFERED=1
 
 # 設定工作目錄
 WORKDIR /app
@@ -8,23 +11,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 複製依賴列表檔案
+# 複製並安裝 Python 依賴
 COPY requirements.txt .
-
-# 安裝 Python 函式庫
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 複製您的應用程式程式碼
+# 複製應用程式程式碼
 COPY . .
 
-# 設定環境變數，讓 Flask 知道要執行哪個檔案
-ENV FLASK_APP=app.py
-
-# 使用 Gunicorn 啟動應用程式的指令
-# 監聽 Render 指定的 PORT，並設定 4 個 worker
+# 【最終修正】使用 shell 格式啟動 Gunicorn，確保 ${PORT} 變數被正確解析
 CMD gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 --access-logfile - --error-logfile - app:app
