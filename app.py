@@ -19,7 +19,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def home():
     return "<h1>DeepFace API is running!</h1><p>請發送 POST 請求到 /analyze 來分析圖片。</p>"
 
-@app.route('/analyze', methods=['POST'])
+@app.route('/analyze', methods=['GET', 'POST'])
 def analyze_face():
     # 檢查請求中是否有檔案
     if 'file' not in request.files:
